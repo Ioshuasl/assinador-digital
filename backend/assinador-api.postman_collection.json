@@ -1,0 +1,227 @@
+{
+	"info": {
+		"_postman_id": "b8a6f4d1-1234-5678-9abc-def012345678",
+		"name": "Assinador Digital API v4 (Completa)",
+		"description": "Coleção completa contendo: Assinatura Digital (ICP-Brasil), Visualização de Preview, Assinatura em Lote (ZIP) e Conversão para PDF/A.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						""
+					]
+				},
+				"description": "Verifica se a API está online."
+			},
+			"response": []
+		},
+		{
+			"name": "Assinatura Digital",
+			"item": [
+				{
+					"name": "Assinar PDF (Individual)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "password",
+									"value": "123456",
+									"description": "Senha do certificado",
+									"type": "text"
+								},
+								{
+									"key": "pdf",
+									"description": "Arquivo PDF original",
+									"type": "file"
+								},
+								{
+									"key": "certificate",
+									"description": "Certificado A1 (.pfx)",
+									"type": "file"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "(Opcional) Página do carimbo. Padrão: Última.",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "x",
+									"value": "40",
+									"description": "(Opcional) Posição Horizontal.",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "y",
+									"value": "40",
+									"description": "(Opcional) Posição Vertical (0 = Rodapé).",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/sign",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"sign"
+							]
+						},
+						"description": "Assina um único arquivo PDF e retorna o binário assinado."
+					},
+					"response": []
+				},
+				{
+					"name": "Preview (Visualizar)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "pdf",
+									"description": "PDF para visualizar",
+									"type": "file"
+								},
+								{
+									"key": "page",
+									"value": "1",
+									"description": "Número da página. Se vazio, retorna o PDF todo.",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/sign/preview",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"sign",
+								"preview"
+							]
+						},
+						"description": "Retorna um arquivo PDF (inline) contendo apenas a página solicitada para visualização rápida."
+					},
+					"response": []
+				},
+				{
+					"name": "Assinatura em Lote (ZIP)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "password",
+									"value": "123456",
+									"type": "text"
+								},
+								{
+									"key": "certificate",
+									"type": "file"
+								},
+								{
+									"key": "pdfs",
+									"description": "Selecione MÚLTIPLOS arquivos (Ctrl+Click)",
+									"type": "file"
+								},
+								{
+									"key": "x",
+									"value": "40",
+									"type": "text",
+									"disabled": true
+								},
+								{
+									"key": "y",
+									"value": "40",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/sign/batch",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"sign",
+								"batch"
+							]
+						},
+						"description": "Processa múltiplos PDFs com o mesmo certificado e retorna um arquivo .zip."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Utilitários",
+			"item": [
+				{
+					"name": "Converter para PDF/A",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "pdf",
+									"description": "Arquivo PDF padrão",
+									"type": "file"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/api/v1/convert/pdfa",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"convert",
+								"pdfa"
+							]
+						},
+						"description": "Converte um PDF comum para o formato PDF/A-1b (Arquivamento de Longo Prazo)."
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

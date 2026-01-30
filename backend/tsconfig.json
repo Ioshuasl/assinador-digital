@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    /* Configurações Básicas */
+    "target": "es2020",                       /* Versão do JS gerado (Node 14+) */
+    "module": "commonjs",                     /* Padrão de módulos do Node.js */
+    "lib": ["es6"],                           /* Bibliotecas base */
+    "allowJs": true,                          /* Permite arquivos .js se necessário */
+    "outDir": "./dist",                       /* Onde o código compilado (JS) ficará */
+    "rootDir": "./src",                       /* Onde está seu código fonte (TS) */
+    "removeComments": true,                   /* Remove comentários no build final */
+
+    /* Strict Type-Checking (Segurança de código) */
+    "strict": true,                           /* Ativa todas as verificações estritas */
+    "noImplicitAny": true,                    /* Proíbe variáveis sem tipo definido */
+    "strictPropertyInitialization": false,    /* Útil para entidades que não iniciam no construtor */
+
+    /* Interoperabilidade de Módulos */
+    "esModuleInterop": true,                  /* Permite importar módulos CommonJS como ES6 */
+    "resolveJsonModule": true,                /* Permite importar arquivos .json */
+    "skipLibCheck": true,                     /* Pula verificação de tipos em node_modules (mais rápido) */
+    "forceConsistentCasingInFileNames": true  /* Evita erros de case sensitive em imports */
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "**/*.spec.ts"]
+}
