@@ -20,7 +20,7 @@ info:
   version: 2.0.0
 
 servers:
-  - url: https://projeto-assinador-digital-api.lwcbm0.easypanel.host/api/v1
+  - url: https://assinador-digital.ioshuavps.com.br/api/v1
     description: Ambiente de Produção
   - url: http://localhost:3000
     description: Ambiente de Desenvolvimento (Local)
