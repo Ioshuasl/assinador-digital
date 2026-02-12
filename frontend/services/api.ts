@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://192.168.1.140:3000',
+  baseURL: 'https://projeto-assinador-digital-api.lwcbm0.easypanel.host',
 });
 
 // Utility to download blobs

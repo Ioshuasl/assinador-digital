@@ -1,203 +1,253 @@
 openapi: 3.0.0
 info:
-  title: API Assinador Digital ICP-Brasil
+  title: API de Assinatura Digital e Processamento PDF (ICP-Brasil)
   description: |
-    API profissional para assinatura digital de PDFs (PAdES), conversão para PDF/A e processamento em lote.
+    Documentação técnica da API de microsserviços para manipulação de documentos PDF.
     
-    **Conformidade ICP-Brasil:**
-    Esta API implementa validações rigorosas de segurança nos certificados digitais, incluindo:
-    * Verificação de Data de Validade (NotBefore / NotAfter).
-    * Verificação de Tamanho de Chave (Mínimo 2048 bits).
-    * Verificação de Algoritmo de Assinatura (Exige SHA-256 ou superior).
-  version: 1.1.0
-  contact:
-    name: Equipe de Desenvolvimento
-    email: dev@assinador.com.br
+    ### Stack Tecnológica
+    * **Runtime:** Node.js (TypeScript)
+    * **Processamento PDF:** PDF-Lib & Ghostscript (para conformidade PDF/A)
+    * **Criptografia:** Node-Forge (PKI.js logic) & Node-SignPDF
+    * **Segurança:** Processamento de chaves privadas estritamente em memória (RAM), sem persistência em disco.
+
+    ### Padrões Suportados
+    * **Assinatura:** PAdES-Basic (PDF Advanced Electronic Signatures).
+    * **Certificados:** X.509 via containers PKCS#12 (.pfx/.p12).
+    * **Hash:** SHA-256 (Enforced via `PfxParserService` para compliance ICP-Brasil).
+    * **Chaves:** RSA 2048-bit ou superior.
+    * **Arquivamento:** PDF/A-1b (ISO 19005-1).
+
+  version: 2.0.0
 
 servers:
+  - url: https://projeto-assinador-digital-api.lwcbm0.easypanel.host/api/v1
+    description: Ambiente de Produção
   - url: http://localhost:3000
-    description: Servidor Local (Dev)
+    description: Ambiente de Desenvolvimento (Local)
+
+tags:
+  - name: Signer
+    description: Endpoints para assinatura digital (PAdES) e carimbos visuais.
+  - name: Converter
+    description: Endpoints para normalização e conversão de normas (PDF/A).
 
 paths:
-  /:
-    get:
-      summary: Health Check
-      description: Verifica se a API está online.
-      responses:
-        200:
-          description: API Online
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "Online"
-                  message:
-                    type: string
-
-  /api/v1/sign:
+  /sign/:
     post:
-      summary: Assinar PDF Individual
+      summary: Assinar PDF (Single Transaction)
       description: |
-        Recebe um PDF e um Certificado A1 (.pfx) e retorna o PDF assinado digitalmente.
+        Realiza a assinatura digital de um único documento PDF utilizando um certificado A1.
         
-        **Validações:** Antes de assinar, o sistema verifica se o certificado é válido, se possui chave RSA de no mínimo 2048 bits e se utiliza algoritmo SHA-256, conforme normas da ICP-Brasil.
+        **Fluxo de Processamento:**
+        1. Upload do PDF e Certificado para memória volátil (Buffer).
+        2. Validação criptográfica do certificado (Cadeia, Validade, Key Usage, Algoritmo).
+        3. Aplicação do carimbo visual (se coordenadas fornecidas).
+        4. Injeção da assinatura PAdES (ByteRange manipulado).
+        5. Retorno do binário assinado.
       tags:
-        - Assinatura
+        - Signer
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - pdf
+                - certificate
+                - password
               properties:
                 pdf:
                   type: string
                   format: binary
-                  description: Arquivo PDF original.
+                  description: Arquivo PDF original (Max 10MB).
                 certificate:
                   type: string
                   format: binary
-                  description: Arquivo do certificado digital (.pfx ou .p12).
+                  description: Container PKCS#12 (.pfx ou .p12).
                 password:
                   type: string
-                  description: Senha do certificado.
+                  format: password
+                  description: Senha de descriptografia da chave privada.
                 page:
                   type: integer
-                  description: "(Opcional) Número da página para o carimbo visual. Padrão: Última."
+                  description: "Índice da página para o carimbo visual (1-based). Default: Última página."
+                  example: 1
                 x:
-                  type: integer
-                  description: "(Opcional) Posição X do carimbo."
+                  type: number
+                  description: "Coordenada X (pontos) do carimbo visual."
+                  example: 100
                 y:
-                  type: integer
-                  description: "(Opcional) Posição Y do carimbo (0 = Rodapé)."
+                  type: number
+                  description: "Coordenada Y (pontos) do carimbo visual."
+                  example: 50
+                width:
+                  type: number
+                  description: "Largura do carimbo visual."
+                  default: 300
+                height:
+                  type: number
+                  description: "Altura do carimbo visual."
+                  default: 60
       responses:
         200:
-          description: PDF Assinado com sucesso.
+          description: Sucesso. Retorna o binário do PDF assinado.
           content:
             application/pdf:
               schema:
                 type: string
                 format: binary
         400:
-          description: |
-            Erro de validação ou segurança. Possíveis causas:
-            * Senha incorreta.
-            * Certificado expirado ou ainda não válido.
-            * Chave privada fraca (menor que 2048 bits).
-            * Algoritmo de assinatura inseguro (ex: SHA-1).
-            * Arquivo PDF inválido ou corrompido.
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  status:
-                    type: string
-                    example: "error"
-                  message:
-                    type: string
-                    example: "O certificado possui uma chave de 1024 bits. A norma ICP-Brasil exige no mínimo 2048 bits."
+          $ref: '#/components/responses/BadRequest'
+        500:
+          $ref: '#/components/responses/ServerError'
 
-  /api/v1/sign/preview:
+  /sign/batch:
     post:
-      summary: Preview de Página
-      description: Extrai uma página específica do PDF para visualização prévia ou retorna o documento todo. Útil para o frontend posicionar o carimbo.
-      tags:
-        - Utilitários
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                pdf:
-                  type: string
-                  format: binary
-                  description: Arquivo PDF para visualizar.
-                page:
-                  type: integer
-                  description: "(Opcional) Número da página. Se omitido, retorna o PDF completo."
-      responses:
-        200:
-          description: PDF contendo a página solicitada.
-          content:
-            application/pdf:
-              schema:
-                type: string
-                format: binary
-
-  /api/v1/sign/batch:
-    post:
-      summary: Assinatura em Lote
+      summary: Assinatura em Lote (Batch Processing)
       description: |
-        Assina múltiplos PDFs de uma vez com o mesmo certificado e retorna um arquivo ZIP.
+        Processa múltiplos PDFs utilizando uma única validação de certificado.
+        Retorna um arquivo ZIP contendo os documentos assinados e logs de erro individuais (se houver).
         
-        **Segurança:** O certificado é validado uma única vez antes do início do processamento. Se for inválido (expirado ou fraco), a operação é abortada imediatamente para evitar processamento inútil.
+        **Performance:** O certificado é descriptografado e validado apenas uma vez antes da iteração sobre os arquivos.
       tags:
-        - Assinatura
+        - Signer
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - pdfs
+                - certificate
+                - password
               properties:
                 certificate:
                   type: string
                   format: binary
-                  description: Arquivo do certificado digital (.pfx).
+                  description: Container PKCS#12 (.pfx).
                 password:
                   type: string
-                  description: Senha do certificado.
+                  format: password
                 pdfs:
                   type: array
                   items:
                     type: string
                     format: binary
-                  description: Lista de arquivos PDF para assinar (máx 20 recomendado).
+                  description: 'Array de arquivos PDF. (Sugestão: Max 20 arquivos/req).'
                 x:
-                  type: integer
-                  description: (Opcional) Posição X para todos os arquivos.
+                  type: number
+                  description: Coordenada X global para todos os arquivos.
                 y:
-                  type: integer
-                  description: (Opcional) Posição Y para todos os arquivos.
+                  type: number
+                  description: Coordenada Y global para todos os arquivos.
       responses:
         200:
-          description: Arquivo ZIP contendo os PDFs assinados e eventuais logs de erro de arquivos individuais.
+          description: Arquivo ZIP contendo os resultados.
           content:
             application/zip:
               schema:
                 type: string
                 format: binary
         400:
-          description: Erro crítico de validação do certificado (Expiração, Senha ou Segurança).
+          $ref: '#/components/responses/BadRequest'
 
-  /api/v1/convert/pdfa:
+  /sign/preview:
     post:
-      summary: Converter para PDF/A
-      description: Converte um PDF padrão para o formato PDF/A-1b (Arquivamento de Longo Prazo) usando Ghostscript.
+      summary: Extração de Página (Preview)
+      description: |
+        Utilitário para extrair uma página específica de um PDF. 
+        Utilizado pelo frontend para renderizar um canvas onde o usuário escolhe a posição do carimbo visual (X, Y).
       tags:
-        - Utilitários
+        - Signer
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
               type: object
+              required:
+                - pdf
               properties:
                 pdf:
                   type: string
                   format: binary
-                  description: Arquivo PDF original.
+                page:
+                  type: integer
+                  description: "Número da página a ser extraída (1-based). Se omitido, retorna o doc todo."
       responses:
         200:
-          description: PDF convertido e validado estruturalmente.
+          description: PDF contendo apenas a página solicitada.
           content:
             application/pdf:
               schema:
                 type: string
                 format: binary
+
+  /convert/pdfa:
+    post:
+      summary: Conversão PDF/A-1b (Ghostscript)
+      description: |
+        Converte um PDF arbitrário para o padrão ISO 19005-1 (PDF/A-1b).
+        
+        **Processo:**
+        1. Sanitização de inputs.
+        2. Injeção de perfil de cor ICC (sRGB).
+        3. Execução de subprocesso Ghostscript com flags `-dPDFA=1`.
+        4. Validação de metadados XMP.
+      tags:
+        - Converter
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - pdf
+              properties:
+                pdf:
+                  type: string
+                  format: binary
+      responses:
+        200:
+          description: Documento convertido em conformidade PDF/A.
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        500:
+          description: Falha na conversão (Erro Ghostscript).
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorPayload'
+
+components:
+  schemas:
+    ErrorPayload:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "O certificado expirou em 2025-12-31."
+
+  responses:
+    BadRequest:
+      description: Erro de Validação (Regra de Negócio ou Input)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorPayload'
+    
+    ServerError:
+      description: Erro Interno do Servidor (Unhandled Exception)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorPayload'
