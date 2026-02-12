@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'https://assinador-digital.ioshuavps.com.br';
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://assinador-digital.api.ioshuavps.com.br';
 
 const api = axios.create({
   baseURL: BASE_URL,
