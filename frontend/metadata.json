@@ -1,0 +1,5 @@
+{
+  "name": "SignDoc - Painel de Assinatura Digital",
+  "description": "Uma aplicação profissional para assinatura digital de documentos PDF, permitindo seleção interativa de coordenadas, processamento em lote e conversão para PDF/A.",
+  "requestFramePermissions": []
+}
