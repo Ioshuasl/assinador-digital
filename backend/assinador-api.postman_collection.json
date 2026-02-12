@@ -1,15 +1,16 @@
 {
 	"info": {
 		"_postman_id": "b8a6f4d1-1234-5678-9abc-def012345678",
-		"name": "Assinador Digital API v4 (Completa)",
-		"description": "Coleção completa contendo: Assinatura Digital (ICP-Brasil), Visualização de Preview, Assinatura em Lote (ZIP) e Conversão para PDF/A.",
+		"name": "Assinador Digital API v2 (Prod)",
+		"description": "Coleção atualizada para o ambiente de produção (EasyPanel/Docker).\nURL Base: https://assinador-digital.ioshuavps.com.br",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:3000",
-			"type": "string"
+			"value": "https://assinador-digital.ioshuavps.com.br",
+			"type": "string",
+			"description": "Domínio raiz da aplicação"
 		}
 	],
 	"item": [
@@ -27,7 +28,7 @@
 						""
 					]
 				},
-				"description": "Verifica se a API está online."
+				"description": "Verifica se o servidor está online (Root Path)."
 			},
 			"response": []
 		},

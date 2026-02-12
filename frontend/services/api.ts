@@ -1,7 +1,9 @@
 import axios from 'axios';
 
+const BASE_URL = import.meta.env.VITE_API_URL || 'https://assinador-digital.ioshuavps.com.br';
+
 const api = axios.create({
-  baseURL: 'https://projeto-assinador-digital-api.lwcbm0.easypanel.host',
+  baseURL: BASE_URL,
 });
 
 // Utility to download blobs
